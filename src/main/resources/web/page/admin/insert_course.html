@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加课程</title>
+</head>
+<body>
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="update">
+    <el-form :model="insertForm" :rules="rules" ref="insertForm" label-width="100px" class="demo-insertForm">
+        <el-form-item label="课程名" prop="coursename" style="width: 320px">
+            <el-input v-model="insertForm.coursename" placeholder="请输入课程名"></el-input>
+        </el-form-item>
+        <el-form-item label="状态" prop="flag">
+            <el-switch
+                    style="display: block"
+                    v-model="insertForm.flag"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949"
+            >
+            </el-switch>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" @click="submitForm">确认添加</el-button>
+            <el-button @click="resetForm('insertForm')">重置</el-button>
+        </el-form-item>
+
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el: "#update",
+        data() {
+            return {
+                insertForm: {
+                    coursename: '',
+                    flag: true,
+                },
+                rules: {
+                    coursename: [
+                        {required: true, message: '请输入课程名', trigger: 'blur'},
+                    ],
+                }
+            };
+        },
+
+        methods: {
+            submitForm() {
+                var _this = this;
+                this.$refs.insertForm.validate(valid => {
+                    //表单验证失败
+                    if (!valid) {
+                        return false;
+                    }
+                    //表单验证通过
+                    $.ajax({
+                        url: "http://localhost:8080/admincourse/insertcourse",
+                        type: "POST",
+                        data: JSON.stringify(_this.insertForm),
+                        contentType: "application/json;charsetset=UTF-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            var Code = json.code  // 获取Result的code
+                            if (Code == '1') {
+                                alert(JSON.stringify(json.data))
+                                window.location.href = 'admin_course.html'
+                            } else {
+                                _this.$message.error(json.msg)
+                            }
+                        }, error: function () { // 服务器出错
+                        }
+                    })
+                });
+
+            },
+            // 重置表单
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    })
+</script>
+</body>
+</html>

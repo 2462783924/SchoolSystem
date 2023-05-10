@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <style>
+        /*设置居中*/
+        .login-form {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+
+
+</head>
+<body>
+
+<script src="../js/vue.js"></script>
+<script src="../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../element-ui/lib/theme-chalk/index.css">
+<script src="../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="app" class="login-form">
+    <el-form :label-position="labelPosition" action="index.html" label-width="80px" :model="formLabelAlign"
+             :rules="rules">
+        <el-form-item><h1 style="position:relative;left: 43px;color: #41beff">School System</h1></el-form-item>
+        <el-form-item label="账号：" prop="username">
+            <el-input v-model="formLabelAlign.username" id="username" placeholder="请输入账号：">
+            </el-input>
+        </el-form-item>
+        <el-form-item label="密码：" prop="password">
+            <el-input v-model="formLabelAlign.password" id="password" placeholder="请输入密码："
+                      show-password>
+            </el-input>
+
+            <template>
+                <el-checkbox v-model="formLabelAlign.checked">记住密码</el-checkbox>
+            </template>
+            <el-link type="primary" style="float: right">忘记密码</el-link>
+        </el-form-item>
+            <el-button :loading="loading" @click="tobeJSON" type="primary" style="width:100%;"
+                       icon="el-icon-mouse">
+                <span v-if="!loading">登录</span>
+                <span v-else>登录中...</span>
+            </el-button>
+        </button>
+    </el-form>
+</div>
+
+<script type="module">
+    new Vue({
+        el: "#app",
+        data() {
+            return {
+                loading: false,
+                labelPosition: 'left',
+                formLabelAlign: {
+                    username: 'admin',
+                    password: 'admin',
+                    checked: false,
+                },
+                // 验证账号密码不能为空
+                rules: {
+                    username: [
+                        {required: true, message: '请输入账号', trigger: 'blur'}
+                    ],
+                    password: [
+                        {required: true, message: '请输入密码', trigger: 'blur'}
+                    ]
+                },
+            };
+        },
+        methods: {
+            tobeJSON() {
+                var vm = this;
+                vm.loading = true
+
+                $.ajax({
+                    url: "http://localhost:8080/user/login",
+                    type: "POST",
+                    data: JSON.stringify(vm.formLabelAlign),
+                    contentType: "application/json;charsetset=UTF-8",
+                    dataType: "json",
+                    xhrFields:{
+                        withCredentials:true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == '1') {// 登录成功
+                            // 获取身份标识码
+                            var userRank = JSON.parse(JSON.stringify(json.data)).userrank
+                            localStorage.setItem('userInfo', JSON.stringify(json.data)) // 将数据存到页面
+                            // 根据不同用户身份进入不同页面
+                            switch (userRank) {
+                                case 0: { // 学生身份
+                                    window.location.href = 'student/student.html';
+                                    break;
+                                }
+                                case 1: { // 学生管理
+                                    window.location.href = 'test.html';
+                                    break;
+                                }
+                                case 2: { // 教师身份
+                                    window.location.href = 'test.html';
+                                    break;
+                                }
+                                case 3: { // 管理员身份
+                                   window.location.href = 'admin/attendant.html';
+                                    break;
+                                }
+                            }
+
+                        } else { // 登录失败
+                            vm.$message.error(json.msg)
+                            vm.loading = false
+                        }
+
+                    }, error: function () { // 服务器出错
+                        vm.$message.info("服务器繁忙，请稍后再试")
+                        vm.loading = false
+                    }
+                })
+
+            }
+        }
+    })
+</script>
+
+</body>
+</html>

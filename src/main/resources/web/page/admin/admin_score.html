@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>成绩管理</title>
+    <link rel="stylesheet" type="text/css" href="../../css/container.css">
+
+    <style>
+        .el-select {
+            width: 130px;
+        }
+
+        .el-input {
+            width: 200px;
+        }
+
+        .input-with-select .el-input-group__prepend {
+            background-color: #fff;
+        }
+    </style>
+
+</head>
+<body>
+
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+
+<div id="course">
+    <el-container style="height: 100%; border: 1px solid #eee">
+        <!--主体-->
+        <el-main>
+
+            <div style="margin-top: 15px;">
+                <el-input placeholder="请输入学号或课程" style="width: 500px" v-model="input_find" class="input-with-select">
+                    <el-select style="width: 90px" v-model="select" slot="prepend" placeholder="请选择">
+                        <el-option label="学号" value="1"></el-option>
+                        <el-option label="课程" value="2"></el-option>
+                    </el-select>
+                    <el-button slot="append" icon="el-icon-search" @click="findKind"></el-button>
+                </el-input>
+                <el-dropdown>
+                    <el-button type="success" @click="insertScore">添加成绩</el-button>
+                </el-dropdown>
+            </div>
+
+            <el-table :data="tableData" :show-header="status">
+                <el-table-column prop="stuno" label="学号"></el-table-column>
+                <el-table-column prop="courseid" label="课程号"></el-table-column>
+                <el-table-column prop="coursename" label="课程名"></el-table-column>
+                <el-table-column prop="score" label="成绩"></el-table-column>
+                <el-table-column prop="control" width=200px" label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" round @click="upDate (scope.row)">修改</el-button>
+                        <el-button type="danger" round @click="deleteScore (scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+
+            </el-table>
+        </el-main>
+    </el-container>
+
+    <!--分页功能条-->
+    <el-pagination
+            background
+            style="text-align:center;"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="page"
+            :page-sizes="[5,10,15]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="counts">
+    </el-pagination>
+</div>
+
+<script type="module">
+    new Vue({
+        el: "#course",
+        data() {
+            return {
+                input_find: '',
+                select: '',
+                counts: [],
+                page: 1,
+                pageSize: 10,
+                tableData: [],
+            }
+        },
+        mounted: function () {
+            this.loadScore()
+        },
+
+        methods: {
+
+            /**
+             * 载入数据
+             * 并可以通过学号查询
+             */
+            loadScore() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/score/pagescore",
+                    type: "POST",
+                    data: {
+                        start: _this.page,
+                        size: _this.pageSize,
+                        stuno: _this.input_find,
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let jsondata = JSON.parse(JSON.stringify(json.data));
+                            _this.tableData = jsondata || []
+
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+                this.getCount("courseid", _this.input_find)
+            },
+
+            /**
+             * 根据课程名查找
+             */
+            findByCourse() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/score/findByCourse",
+                    type: "POST",
+                    data: {
+                        start: _this.page,
+                        size: _this.pageSize,
+                        coursename: _this.input_find,
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let jsondata = JSON.parse(JSON.stringify(json.data));
+                            _this.tableData = jsondata || []
+
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+                $.ajax({
+                    url: "http://localhost:8080/score/countscorebyCourse",
+                    type: "POST",
+                    data: {
+                        coursename: _this.input_find,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            _this.counts = json.data.count
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+
+            },
+
+            /**
+             * 获取记录条数
+             * @param col
+             * @param val
+             */
+            getCount(col, val) {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/score/countscore",
+                    type: "POST",
+                    data: {
+                        column: col,
+                        val: val,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let jsondata = JSON.parse(JSON.stringify(json.data));
+                            var count = jsondata.total
+                            _this.counts = count
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+            },
+
+            /**
+             * 分页条功能监听器
+             */
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.loadScore()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.loadScore()
+            },
+
+            /**
+             * 更细成绩程信息
+             * @param row
+             */
+            upDate(row) {
+                // 将要更新的id存入页面，并转跳到更新页面表单
+                localStorage.setItem('updateStuno', row.stuno)
+                localStorage.setItem('updateCourseid', row.courseid)
+                localStorage.setItem('updateCoursename', row.coursename)
+                window.location.href = 'update_score.html';
+            },
+
+            /**
+             * 删除课程信息
+             * @param row
+             */
+            deleteScore(row) {
+                var _this = this
+                this.$confirm('学生:' + row.stuno +' 课程：'+ row.coursename, '删除', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.ajax({
+                        url: "http://localhost:8080/score/deletescore",
+                        type: "POST",
+                        data: {
+                            stuno:row.stuno,
+                            courseid: row.courseid
+                        },
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            _this.loadScore();
+                            var json = eval(data) // 获取后端返回的json数据
+                            var code = json.code
+                            if (code == '1') {
+                                _this.$message({
+                                    type: 'success',
+                                    message: "学生:" + row.stuno + ' 课程：' + row.coursename + ' —— ' + '删除成功!'
+                                });
+                            } else {
+                                _this.$message({
+                                    type: 'error',
+                                    message: '删除失败!'
+                                });
+                            }
+                        },
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+
+            /**
+             * 页面表格显示处理
+             * @param row
+             * @returns {string}
+             */
+            judgestatus(row) {
+                if (row.ifexist === 0) {
+                    return '禁用'
+                } else {
+                    return '启用'
+                }
+            },
+
+            /**
+             *  选择使用哪个查找功能
+             */
+            findKind() {
+                if (this.select == '1') {
+                    this.loadScore()
+                } else {
+                    this.findByCourse()
+                }
+            },
+
+            /**
+             * 添加成绩
+             */
+            insertScore() {
+                window.location.href = 'insert_score.html';
+            }
+        }
+    })
+</script>
+</body>
+</html>

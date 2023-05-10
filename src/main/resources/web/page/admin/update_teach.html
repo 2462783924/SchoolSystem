@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>更新教师信息</title>
+</head>
+<body>
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="update">
+    <el-form :model="updateForm" :rules="rules" ref="updateForm" label-width="100px" class="demo-ruleForm">
+        <el-form-item label="id" prop="id" style="width: 320px">
+            <el-input v-model="updateForm.id" :disabled="true"></el-input>
+        </el-form-item>
+
+        <el-form-item label="编号" prop="teachno" style="width: 320px">
+            <el-input v-model="updateForm.teachno" placeholder="请输入教师编号"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名" prop="teachname" style="width: 320px">
+            <el-input v-model="updateForm.teachname" placeholder="请输入教师姓名"></el-input>
+        </el-form-item>
+        <el-form-item label="性别" prop="teachsex">
+            <el-radio-group v-model="updateForm.teachsex">
+                <el-radio label="男">男</el-radio>
+                <el-radio label="女">女</el-radio>
+            </el-radio-group>
+        </el-form-item>
+        <!--        <el-form-item label="班级" prop="classname">-->
+        <el-form-item label="课程" prop="coursename" style="width: 320px">
+            <el-input v-model="updateForm.coursename" placeholder="请输入课程名称"></el-input>
+        </el-form-item>
+        <el-form-item label="电话" prop="phone" style="width: 320px">
+            <el-input v-model="updateForm.phone" placeholder="请输入教师电话"></el-input>
+        </el-form-item>
+
+
+        <el-form-item>
+            <el-button type="primary" @click="submitForm">确认修改</el-button>
+            <el-button @click="resetForm('updateForm')">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el: "#update",
+        data() {
+            return {
+                updateForm: {
+                    id: localStorage.getItem('updateId'),
+                    teachno: '',
+                    teachname: '',
+                    teachsex: '',
+                    coursename: '',
+                    phone: '',
+                },
+                rules: {
+                    teachname: [
+                        {required: true, message: '请输入教师姓名', trigger: 'blur'},
+                    ],
+                    teachno: [
+                        {required: true, message: '请输入教师编号', trigger: 'blur'},
+                    ],
+                    teachsex: [
+                        {required: true, message: '请选择教师性别', trigger: 'change'}
+                    ],
+                    coursename: [
+                        {required: true, message: '请输入任教课程', trigger: 'blur'}
+                    ],
+                    phone: [
+                        {required: true, message: '请输入教师电话', trigger: 'blur'}
+                    ],
+                }
+            };
+        },
+
+        methods: {
+            submitForm() {
+                var _this = this;
+                this.$refs.updateForm.validate(valid => {
+                    //表单验证失败
+                    if (!valid) {
+                        return false;
+                    }
+                    //表单验证通过
+                    $.ajax({
+                        url: "http://localhost:8080/teach/teachupdate",
+                        type: "POST",
+                        data: JSON.stringify(_this.updateForm),
+                        contentType: "application/json;charsetset=UTF-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            var Code = json.code  // 获取Result的code
+                            if (Code == '1') {
+
+                                alert("id:" + localStorage.getItem('updateId') + ' 教师信息已更新！')
+                                localStorage.removeItem('updateId')
+                                window.location.href = 'admin_teach.html'
+                            } else {
+                                _this.$message.error(json.msg)
+                            }
+
+
+                        }, error: function () { // 服务器出错
+                        }
+                    })
+                });
+
+            },
+            // 重置表单
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    })
+</script>
+</body>
+</html>

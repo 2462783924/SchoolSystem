@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>更新成绩</title>
+</head>
+<body>
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="update">
+    <el-form :model="updateForm" :rules="rules" ref="updateForm" label-width="100px" class="demo-ruleForm">
+        <el-form-item label="学生学号" prop="stuno" style="width: 320px">
+            <el-input v-model="updateForm.stuno" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="课程号" prop="courseid" style="width: 320px">
+            <el-input v-model="updateForm.courseid" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="课程名" prop="coursename" style="width: 320px">
+            <el-input v-model="updateForm.coursename" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="成绩" prop="score" style="width: 320px">
+            <el-input v-model.number="updateForm.score" placeholder="请输入学生成绩"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" @click="submitForm">确认修改</el-button>
+            <el-button @click="resetForm('insertForm')">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el: "#update",
+        data() {
+            return {
+                updateForm: {
+                    stuno: localStorage.getItem('updateStuno'),
+                    courseid: localStorage.getItem('updateCourseid'),
+                    coursename: localStorage.getItem('updateCoursename'),
+                    score:'',
+                },
+                rules: {
+                    score: [
+                        {required: true, message: '请输入学生成绩', trigger: 'blur'},
+                        {type:"number" ,min: 0, max: 100, message: '学生成绩范围在0-100以内',trigger: 'blur' },
+                    ],
+                }
+            };
+        },
+
+        methods: {
+            submitForm() {
+                var _this = this;
+                this.$refs.updateForm.validate(valid => {
+                    //表单验证失败
+                    if (!valid) {
+                        return false;
+                    }
+                    //表单验证通过
+                    $.ajax({
+                        url: "http://localhost:8080/score/updatescore",
+                        type: "POST",
+                        data: JSON.stringify(_this.updateForm),
+                        contentType: "application/json;charsetset=UTF-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            var Code = json.code  // 获取Result的code
+                            if (Code == '1') {
+                                alert("学生：" + localStorage.getItem('updateStuno') +" 课程："+localStorage.getItem('updateCoursename')+ ' —— 更新成功')
+                                localStorage.removeItem('updateStuno')
+                                localStorage.removeItem('updateCourseid')
+                                localStorage.removeItem('updateCoursename')
+                                window.location.href = 'admin_score.html'
+                            } else {
+                                _this.$message.error(json.msg)
+                            }
+
+
+                        }, error: function () { // 服务器出错
+                        }
+                    })
+                });
+
+            },
+            // 重置表单
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    })
+</script>
+</body>
+</html>

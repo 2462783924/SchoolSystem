@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>教师管理</title>
+
+    <link rel="stylesheet" type="text/css" href="../../css/container.css">
+
+    <style>
+        .el-select {
+            width: 130px;
+        }
+
+        .el-input {
+            width: 200px;
+        }
+
+        .input-with-select .el-input-group__prepend {
+            background-color: #fff;
+        }
+    </style>
+
+</head>
+<body>
+
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+
+<div id="teach">
+    <el-container style="height: 100%; border: 1px solid #eee">
+        <!--主体-->
+        <el-main>
+
+            <div style="margin-top: 15px;">
+                <el-input placeholder="请输入姓名或课程" style="width: 500px" v-model="input_find" class="input-with-select">
+                    <el-select style="width: 90px" v-model="select" slot="prepend" placeholder="请选择">
+                        <el-option label="姓名" value="1"></el-option>
+                        <el-option label="课程" value="2"></el-option>
+                    </el-select>
+                    <el-button slot="append" icon="el-icon-search" @click="findKind"></el-button>
+                </el-input>
+            </div>
+
+            <el-table :data="tableData" :show-header="status">
+                <el-table-column prop="teachno" label="编号">
+                </el-table-column>
+                <el-table-column prop="teachname" label="姓名">
+                </el-table-column>
+                <el-table-column prop="teachsex" label="性别">
+                </el-table-column>
+                <el-table-column prop="phone" label="电话">
+                </el-table-column>
+                <el-table-column prop="coursename" label="课程" >
+                </el-table-column>
+                <el-table-column prop="control" width=200px" label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" round @click="upDate (scope.row)">修改</el-button>
+                        <el-button type="danger" round @click="deleteTeach (scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+
+            </el-table>
+        </el-main>
+    </el-container>
+
+    <!--分页功能条-->
+    <el-pagination
+            background
+            style="text-align:center;"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="page"
+            :page-sizes="[5,10,15]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="counts">
+    </el-pagination>
+</div>
+
+<script type="module">
+    new Vue({
+        el: "#teach",
+        data() {
+            return {
+                input_find: '',
+                select: '',
+                counts: [],
+                page: 1,
+                pageSize: 10,
+                tableData: [],
+            }
+        },
+        // 初始化页面完成后调用loadStu方法获取学生信息数据
+        mounted: function () {
+            this.loadTeach()
+        },
+
+        methods: {
+            /**
+             * 载入数据
+             */
+            loadTeach() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/teach/allteach",
+                    type: "POST",
+                    data: {
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let map = JSON.parse(JSON.stringify(json.data));
+                            _this.tableData = map || []
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+                this.getCount(null, null)
+            },
+
+            /**
+             * 分页条功能监听器
+             */
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.findKind()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.findKind()
+            },
+
+            /**
+             * 查找功能
+             */
+
+            // 通过名字查找
+            findteachbyName() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/teach/getteachbyname",
+                    type: "POST",
+                    data: {
+                        name: _this.input_find,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: { // 解决session跨域问题
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let map = JSON.parse(JSON.stringify(json.data));
+                            _this.tableData = map || []
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+                this.getCount("teachname", _this.input_find)
+            },
+
+            // 通过课程查找
+            findteachbyCoursename() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/teach/getteachbycoursename",
+                    type: "POST",
+                    data: {
+                        name: _this.input_find,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: { // 解决session跨域问题
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let map = JSON.parse(JSON.stringify(json.data));
+                            _this.tableData = map || []
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+                // 统计数据条数
+                $.ajax({
+                    url: "http://localhost:8080/admincourse/getcoursebyName",
+                    type: "POST",
+                    data: {
+                        coursename: _this.input_find,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        _this.counts = json.data.count
+                    },
+                })
+            },
+
+            // 选择使用哪个查找功能
+            findKind() {
+                if (this.select == '1') {
+                    this.findteachbyName()
+                } else if (this.select == '2') {
+                    this.findteachbyCoursename()
+                } else {
+                    this.loadTeach()
+                }
+            },
+
+            /**
+             * 获取记录条数
+             * @param col
+             * @param val
+             */
+            getCount(col, val) {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/teach/countteacher",
+                    type: "POST",
+                    data: {
+                        column: col,
+                        val: val,
+                        start: _this.page,
+                        size: _this.pageSize
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        _this.counts = json
+                    },
+                })
+            },
+
+            /**
+             * 更新教师信息
+             * @param row
+             */
+            upDate(row){
+                // 将要更新的id存入页面，并转跳到更新页面表单
+                localStorage.setItem('updateId', row.id)
+                window.location.href = 'update_teach.html';
+            },
+
+            /**
+             * 删除教师信息
+             * @param row
+             */
+            deleteTeach(row){
+                var _this = this
+                this.$confirm('id:'+row.id+' 教师将被删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.ajax({
+                        url: "http://localhost:8080/user/deleteuser",
+                        type: "POST",
+                        data: {
+                            id:row.id
+                        },
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            _this.loadTeach();
+                            var json = eval(data) // 获取后端返回的json数据
+                            var code = json.code
+                            if(code == '1'){
+                                _this.$message({
+                                    type: 'success',
+                                    message: '删除成功!'
+                                });
+                            }else{
+                                _this.$message({
+                                    type: 'error',
+                                    message: '删除失败!'
+                                });
+                            }
+                        },
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+
+
+            }
+        }
+    });
+
+</script>
+
+</body>
+</html>

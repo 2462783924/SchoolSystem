@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>更新用户信息</title>
+</head>
+<body>
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="update">
+    <el-form :model="updateForm" :rules="rules" ref="updateForm" label-width="100px" class="demo-ruleForm">
+        <el-form-item label="id" prop="id" style="width: 320px">
+            <el-input v-model="updateForm.id" :disabled="true"></el-input>
+            </el-item>
+        </el-form-item>
+        <el-form-item label="用户名" prop="username" style="width: 320px">
+            <el-input v-model="updateForm.username" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password" style="width: 320px">
+            <el-input v-model="updateForm.password" placeholder="请输入密码"></el-input>
+        </el-form-item>
+
+<!--        <el-form-item label="用户身份" prop="userrank">-->
+<!--            <el-select v-model="updateForm.userrank" placeholder="请选择用户身份">-->
+<!--                <el-option label="学生" value="0"></el-option>-->
+<!--                <el-option label="学生代表" value="1"></el-option>-->
+<!--                <el-option label="教师" value="2"></el-option>-->
+<!--                <el-option label="管理员" value="3"></el-option>-->
+<!--            </el-select>-->
+<!--        </el-form-item>-->
+
+        <el-form-item label="状态" prop="flag">
+        <el-switch
+                style="display: block"
+                v-model="updateForm.flag"
+                active-color="#13ce66"
+                inactive-color="#ff4949"
+        >
+        </el-switch>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" @click="submitForm">确认修改</el-button>
+            <el-button @click="resetForm('updateForm')">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el: "#update",
+        data() {
+            return {
+                updateForm: {
+                    id: localStorage.getItem('updateId'),
+                    username: '',
+                    password: '',
+                    // userrank: '',
+                    flag: true,
+                },
+                rules: {
+                    username: [
+                        {required: true, message: '请输入用户名', trigger: 'blur'},
+                    ],
+                    password: [
+                        {required: true, message: '请输入密码', trigger: 'blur'},
+                    ],
+                    // userrank: [
+                    //     {required: true, message: '请选择学生性别', trigger: 'change'}
+                    // ],
+                }
+            };
+        },
+
+        methods: {
+            submitForm() {
+                var _this = this;
+                this.$refs.updateForm.validate(valid => {
+                    //表单验证失败
+                    if (!valid) {
+                        return false;
+                    }
+                    //表单验证通过
+                    $.ajax({
+                        url: "http://localhost:8080/user/updateuser",
+                        type: "POST",
+                        data: JSON.stringify(_this.updateForm),
+                        contentType: "application/json;charsetset=UTF-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            var Code = json.code  // 获取Result的code
+                            if (Code == '1') {
+
+                                alert("id:" + localStorage.getItem('updateId') + ' 用户信息已更新！')
+                                localStorage.removeItem('updateId')
+                                window.location.href = 'admin_user.html'
+                            } else {
+                                _this.$message.error(json.msg)
+                            }
+
+
+                        }, error: function () { // 服务器出错
+                        }
+                    })
+                });
+
+            },
+            // 重置表单
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    })
+</script>
+</body>
+</html>

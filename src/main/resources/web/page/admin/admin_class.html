@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>班级管理</title>
+    <link rel="stylesheet" type="text/css" href="../../css/container.css">
+
+    <style>
+        .el-select {
+            width: 130px;
+        }
+
+        .el-input {
+            width: 200px;
+        }
+
+        .input-with-select .el-input-group__prepend {
+            background-color: #fff;
+        }
+    </style>
+
+</head>
+<body>
+
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+
+<div id="class">
+    <el-container style="height: 100%; border: 1px solid #eee">
+        <!--主体-->
+        <el-main>
+
+            <div style="margin-top: 15px;">
+                <el-input placeholder="请输入班级名" style="width: 500px" v-model="input_find" class="input-with-select">
+                    <el-button slot="append" icon="el-icon-search" @click="loadClass"></el-button>
+                </el-input>
+                <el-dropdown>
+                    <el-button type="success" @click="insertCourse">添加班级</el-button>
+                </el-dropdown>
+            </div>
+
+            <el-table :data="tableData" :show-header="status">
+                <el-table-column prop="classid" label="ID"></el-table-column>
+                <el-table-column prop="classname" label="班级名"></el-table-column>
+                <!--                <el-table-column prop="countstu" label="人数">-->
+                <!--                </el-table-column>-->
+                <el-table-column prop="ifexist" label="状态" :formatter="judgestatus"></el-table-column>
+                <el-table-column prop="control" width=200px" label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" round @click="upDate (scope.row)">修改</el-button>
+                        <el-button type="danger" round @click="deleteCourse (scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+
+            </el-table>
+        </el-main>
+    </el-container>
+
+    <!--分页功能条-->
+    <el-pagination
+            background
+            style="text-align:center;"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="page"
+            :page-sizes="[5,10,15]"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="counts">
+    </el-pagination>
+</div>
+
+<script type="module">
+    new Vue({
+        el: "#class",
+        data() {
+            return {
+                input_find: '',
+                counts: [],
+                page: 1,
+                pageSize: 10,
+                tableData: [],
+            }
+        },
+        mounted: function () {
+            this.loadClass()
+        },
+
+        methods: {
+
+            /**
+             * 载入数据
+             */
+            loadClass() {
+                var _this = this
+                $.ajax({
+                    url: "http://localhost:8080/adminclass/pageClass",
+                    type: "POST",
+                    data: {
+                        start: _this.page,
+                        size: _this.pageSize,
+                        classname: _this.input_find,
+                    },
+                    success: function (data) {
+                        var json = eval(data) // 获取后端返回的json数据
+                        var Code = json.code  // 获取Result的code
+                        if (Code == 1) {
+                            let jsondata = JSON.parse(JSON.stringify(json.data));
+                            var map = jsondata.records
+                            var count = jsondata.total
+                            _this.tableData = map || []
+                            _this.counts = count
+
+                        } else {
+                            _this.$message.error("查询失败")
+                        }
+                    },
+                })
+            },
+
+            /**
+             * 分页条功能监听器
+             */
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.loadClass()
+            },
+            handleCurrentChange(val) {
+                this.page = val
+                this.loadClass()
+            },
+
+            /**
+             * 更新班级信息
+             * @param row
+             */
+            upDate(row) {
+                // 将要更新的id存入页面，并转跳到更新页面表单
+                localStorage.setItem('updateId', row.classid)
+                window.location.href = 'update_class.html';
+            },
+
+            /**
+             * 删除班级信息
+             * @param row
+             */
+            deleteCourse(row) {
+                var _this = this
+                this.$confirm('id:' + row.classid + ' 班级将被删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    $.ajax({
+                        url: "http://localhost:8080/adminclass/deleteclass",
+                        type: "POST",
+                        data: {
+                            classid: row.classid
+                        },
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            _this.loadClass();
+                            var json = eval(data) // 获取后端返回的json数据
+                            var code = json.code
+                            if (code == '1') {
+                                _this.$message({
+                                    type: 'success',
+                                    message: "id:"+row.classid+'\''+ row.classname+'\' —— ' + '删除成功!'
+                                });
+                            } else {
+                                _this.$message({
+                                    type: 'error',
+                                    message: '删除失败!'
+                                });
+                            }
+                        },
+                    })
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+
+            /**
+             * 页面表格显示处理
+             * @param row
+             * @returns {string}
+             */
+            judgestatus(row) {
+                if (row.ifexist === 0) {
+                    return '禁用'
+                } else {
+                    return '启用'
+                }
+            },
+
+            /**
+             * 新建班级
+             */
+            insertCourse() {
+                window.location.href = 'insert_class.html';
+            }
+        }
+    })
+</script>
+</body>
+</html>

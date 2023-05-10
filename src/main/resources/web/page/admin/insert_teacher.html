@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加教师</title>
+</head>
+<body>
+<script src="../../js/vue.js"></script>
+<script src="../../element-ui/lib/index.js"></script>
+<link rel="stylesheet" href="../../element-ui/lib/theme-chalk/index.css">
+<script src="../../js/axios.min.js"></script>
+<script src="http://libs.baidu.com/jquery/1.9.0/jquery.js"></script>
+
+<div id="update">
+    <el-form :model="insertForm" :rules="rules" ref="insertForm" label-width="100px" class="demo-insertForm">
+        <el-form-item label="用户名" prop="username" style="width: 320px">
+            <el-input v-model="insertForm.username" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="password" style="width: 320px">
+            <el-input v-model="insertForm.password" placeholder="请输入密码"></el-input>
+        </el-form-item>
+
+        <el-form-item label="状态" prop="flag">
+            <el-switch
+                    style="display: block"
+                    v-model="insertForm.flag"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949"
+            >
+            </el-switch>
+        </el-form-item>
+
+
+        <el-form-item label="编号" prop="teachno" style="width: 320px">
+            <el-input v-model="insertForm.teachno" placeholder="请输入教师编号"></el-input>
+        </el-form-item>
+
+        <el-form-item label="姓名" prop="teachname" style="width: 320px">
+            <el-input v-model="insertForm.teachname" placeholder="请输入教师姓名"></el-input>
+        </el-form-item>
+
+        <el-form-item label="性别" prop="teachsex">
+            <el-radio-group v-model="insertForm.teachsex">
+                <el-radio label="男">男</el-radio>
+                <el-radio label="女">女</el-radio>
+            </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="课程" prop="coursename" style="width: 320px">
+            <el-input v-model="insertForm.coursename" placeholder="请输入课程名称"></el-input>
+        </el-form-item>
+
+        <el-form-item label="电话" prop="phone" style="width: 320px">
+            <el-input v-model="insertForm.phone" placeholder="请输入教师电话"></el-input>
+        </el-form-item>
+
+
+        <el-form-item>
+            <el-button type="primary" @click="submitForm">确认修改</el-button>
+            <el-button @click="resetForm('insertForm')">重置</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script>
+    new Vue({
+        el: "#update",
+        data() {
+            return {
+                insertForm: {
+                    username: '',
+                    password: '',
+                    flag: true,
+
+                    teachno: '',
+                    teachname: '',
+                    teachsex: '',
+                    teachcourse: '',
+                    phone: '',
+                },
+                rules: {
+                    username: [
+                        {required: true, message: '请输入用户名', trigger: 'blur'},
+                    ],
+                    password: [
+                        {required: true, message: '请输入密码', trigger: 'blur'},
+                    ],
+                    teachname: [
+                        {required: true, message: '请输入教师姓名', trigger: 'blur'},
+                    ],
+                    teachno: [
+                        {required: true, message: '请输入教师编号', trigger: 'blur'},
+                    ],
+                    teachsex: [
+                        {required: true, message: '请选择教师性别', trigger: 'change'}
+                    ],
+                    coursename: [
+                        {required: true, message: '请输入任教课程', trigger: 'blur'}
+                    ],
+                    phone: [
+                        {required: true, message: '请输入教师电话', trigger: 'blur'}
+                    ],
+                }
+            };
+        },
+
+        methods: {
+            submitForm() {
+                var _this = this;
+                this.$refs.insertForm.validate(valid => {
+                    //表单验证失败
+                    if (!valid) {
+                        return false;
+                    }
+                    //表单验证通过
+                    $.ajax({
+                        url: "http://localhost:8080/user/insertteach",
+                        type: "POST",
+                        data: JSON.stringify(_this.insertForm),
+                        contentType: "application/json;charsetset=UTF-8",
+                        dataType: "json",
+                        xhrFields: {
+                            withCredentials: true
+                        },
+                        success: function (data) {
+                            var json = eval(data) // 获取后端返回的json数据
+                            var Code = json.code  // 获取Result的code
+                            if (Code == '1') {
+                                alert(JSON.stringify(json.data))
+                                window.location.href = 'admin_user.html'
+                            } else {
+                                _this.$message.error(json.msg)
+                            }
+
+
+                        }, error: function () { // 服务器出错
+                        }
+                    })
+                });
+
+            },
+            // 重置表单
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    })
+</script>
+</body>
+</html>
